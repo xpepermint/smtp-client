@@ -9,6 +9,7 @@ This is an open source [npm](http://npmjs.com) package from [Node.js](http://nod
 ## Related Projects
 
 * [smtp-channel](https://github.com/xpepermint/smtp-channel): Low level SMTP communication layer.
+* [smtp-connection](https://github.com/nodemailer/smtp-connection): SMTP client for node.js.
 
 ## Install
 
@@ -41,16 +42,14 @@ let smtp = new SMTPClient({
 
 **SMTPClient(options)**
 
-> The core SMTP client class. This class extends the [SMTPChannel](https://github.com/xpepermint/smtp-channel). Which means that options are sent directly to the  [net.connect](https://nodejs.org/api/net.html#net_net_connect_options_connectlistener) or  [tls.connect](https://nodejs.org/api/tls.html#tls_tls_connect_options_callback) method. Other available options are listed below.
+> The core SMTP client class. This class extends the [SMTPChannel](https://github.com/xpepermint/smtp-channel). The options are sent directly to the  [net.connect](https://nodejs.org/api/net.html#net_net_connect_options_connectlistener) or  [tls.connect](https://nodejs.org/api/tls.html#tls_tls_connect_options_callback) method. Custom available options are listed below.
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
-| secure | Boolean | No | false | When `true` the channel will connect to the SMTP server using TLS.
-| timeout | Integer | No | 0 | A time in milliseconds after the socket is automatically closed (`0` disables the timeout).
+| secure | Boolean | No | false | When `true` the channel will connect to a SMTP server using TLS.
+| timeout | Integer | No | 0 | A time in milliseconds after the client automatically disconnects (`0` disables the timeout).
 
-### Methods
-
-Note that all instance methods throw an error when something goes wrong or when the remote SMTP server does not reply with a success code.
+Note that all instance methods throw an error when something goes wrong or when a remote SMTP server does not reply with a success code.
 
 **SMTPClient.prototype.close({timeout})**:Promise;
 
@@ -76,7 +75,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 |--------|------|----------|---------|------------
 | source | String,Buffer,Stream | Yes | - | Email content.
 | timeout | Integer | No | 0 | A time in milliseconds after the operation automatically rejects (`0` disables the timeout).
-| sourceSize | Integer | No | 0 | `source` size in bytes (`0` means no limit). If the size exceeds the allowable limit then the method will throw an error before even contacting the server.
+| sourceSize | Integer | No | 0 | `source` size in bytes. If the size exceeds the allowable limit then the method throws an error before even contacting the server.
 
 **SMTPClient.prototype.ehlo({hostname, timeout})**:Promise;
 
@@ -89,7 +88,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.getDataSizeLimit()**:Integer;
 
-> Returns the email size limit in bytes. The value is retrieved from the SMTP server extensions when the `ehlo` command is executed. If that value is not available then the class `dataSizeLimit` option is returned.
+> Returns the email size limit in bytes. The value is retrieved from the SMTP server extensions when the `ehlo` command is executed.
 
 **SMTPClient.prototype.greet({hostname, timeout})**:Promise;
 
@@ -131,7 +130,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.mail({from})**:Promise;
 
-> Sends the MAIL command to the server which identifies the sender of the message.
+> Sends the MAIL command to the server which identifies the sender of the message (envelope).
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
@@ -172,7 +171,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.rcpt({from, timeout})**:String;
 
-> Sends the RCPT command to the server which identifies the message recipient. Execute this method for each recipient.
+> Sends the RCPT command to the server which identifies the message recipient (envelope). Execute this method multiple times for each recipient if you have many recipients.
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------

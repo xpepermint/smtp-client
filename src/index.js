@@ -1,0 +1,306 @@
+const os = require('os');
+const {SMTPChannel} = require('smtp-channel');
+const promiseWithTimeout = require('promised-timeout').timeout;
+const {SMTPResponseError} = require('./errors');
+
+exports.SMTPClient = class extends SMTPChannel {
+
+  /*
+  * Class constructor.
+  */
+
+  constructor(config={}) {
+    super(config);
+
+    this._extensions = []; // SMTP server extensions
+  }
+
+  /*
+  * Returns a Promise which connects to the SMTP server and starts socket
+  * I/O activity. We can abort the operating after a certain number of
+  * milliseconds by passing the optional `timeout` parameter.
+  */
+
+  connect({timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line)
+
+    return super.connect({timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the HELO command to the server. We can abort
+  * the operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  helo({hostname=null, timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    if (!hostname) hostname = this._getHostname();
+
+    return this.write(`HELO ${hostname}\r\n`, {timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the EHLO command to the server and collects
+  * information about available SMTP server extensions. We can abort the
+  * operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  ehlo({hostname=null, timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    if (!hostname) hostname = this._getHostname();
+
+    return this.write(`EHLO ${hostname}\r\n`, {timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          lines.shift(); // first line is a description
+          this._extensions = lines.map(l => this.parseReplyText(l));
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the EHLO command to the server or HELO command
+  * if the EHLO isn't successful. We can abort the operating after a certain
+  * number of milliseconds by passing the optional `timeout` parameter.
+  */
+
+  greet({hostname=null, timeout=0}={}) {
+    return this.ehlo({hostname})
+      .catch((e) => this.helo({hostname}));
+  }
+
+  /*
+  * Returns `true` if the provided extension name is supporter by the remote
+  * SMTP server.
+  */
+
+  hasExtension(extension) {
+    return !!this._extensions.find(e => e.split(' ')[0] === extension);
+  }
+
+  /*
+  * Returns the email size limit in bytes.
+  */
+
+  getDataSizeLimit() {
+    let extension = this._extensions.find(e => e.split(' ')[0] === 'SIZE');
+    if (extension) {
+      return parseInt(extension.split(' ')[1]);
+    }
+    else {
+      return 0;
+    }
+  }
+
+  /*
+  * Returns the enhanced reply code of the provided reply line.
+  *
+  * NOTES: According to the rfc2034 specification, the text part of all 2xx,
+  * 4xx, and 5xx SMTP responses other than the initial greeting and any response
+  * to HELO or EHLO are prefaced with a status code as defined in RFC 1893. This
+  * status code is always followed by one or more spaces.
+  */
+
+  parseEnhancedReplyCode(line) {
+    let isSupported = this.hasExtension('ENHANCEDSTATUSCODES');
+    return isSupported ? line.substr(4).split(' ', 2)[0] : null;
+  }
+
+  /*
+  * Returns the text part of a reply line.
+  */
+
+  parseReplyText(line) {
+    let isSupported = this.hasExtension('ENHANCEDSTATUSCODES');
+    if (isSupported) {
+      return line.substr(4).split(/[\s](.+)?/, 2)[1];
+    }
+    else {
+      return line.substr(4);
+    }
+  }
+
+  /*
+  * Returns a Promise which sends the MAIL command to the server. We can abort
+  * the operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  mail({from=null, timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`MAIL FROM:<${from}>\r\n`, {timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the RCPT command to the server. We can abort
+  * the operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  rcpt({to=null, timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`RCPT TO:<${to}>\r\n`, {timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the NOOP command to the server. We can abort
+  * the operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  noop({timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`NOOP\r\n`, {timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the RSET command to the server. We can abort
+  * the operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  rset({timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`RSET\r\n`, {timeout, handler})
+      .then((code) => {
+        if (code.charAt(0) === '2') {
+          return code;
+        }
+        throw this._createSMTPResponseError(lines);
+      });
+  }
+
+  /*
+  * Returns a Promise which sends the QUIT command to the server. We can abort
+  * the operating after a certain number of milliseconds by passing the optional
+  * `timeout` parameter.
+  */
+
+  quit({timeout=0}={}) {
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`QUIT\r\n`, {timeout, handler})
+    .then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      throw this._createSMTPResponseError(lines);
+    });
+  }
+
+  /*
+  * Returns a Promise which sends the DATA command to the server, streams the
+  * `source` to the server and finalize the process with the final `.` which
+  * enqueue the email. We can abort the operating after a certain number of
+  * milliseconds by passing the optional `timeout` parameter.
+  */
+
+  data(source, {sourceSize=0, timeout=0}={}) {
+    let sizeLimit = this.getDataSizeLimit();
+    if (sourceSize > sizeLimit) {
+      throw new Error(`Message size exceeds the allowable limit (${sizeLimit} bytes)`);
+    }
+
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`DATA\r\n`, {timeout, handler})
+    .then((code) => {
+      if (code.charAt(0) !== '3') {
+        throw this._createSMTPResponseError(lines);
+      }
+      lines = [];
+      return this.write(`${source}\r\n.\r\n`, {timeout, handler});
+    }).then(code => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      throw this._createSMTPResponseError(lines);
+    });
+  }
+
+  /*
+  * Returns a new SMTPResponseError instance populated with information from the
+  * provided reply lines.
+  */
+
+  _createSMTPResponseError(lines) {
+    let line = lines[lines.length-1];
+    let code = this.parseReplyCode(line);
+    let enhancedCode = this.parseEnhancedReplyCode(line);
+    let message = lines.map(l => this.parseReplyText(l)).join(' ').replace(/\s\s+/g, ' ');
+
+    return new SMTPResponseError(message, code, enhancedCode);
+  }
+
+  /*
+  * Returns a hostname of a client machine.
+  *
+  * NOTES: According to rfc2821, the domain name given in the EHLO command must
+  * be either a primary host name (a domain name that resolves to an A RR) or,
+  * if the host has no name, an address IPv4/IPv6 literal enclosed by brackets
+  * (e.g. [192.168.1.1]).
+  */
+
+  _getHostname() {
+    let host = os.hostname() || '';
+
+    if (host.indexOf('.') < 0) { // ignore if not FQDN
+      host = '[127.0.0.1]';
+    }
+    else if (host.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) { // IP mut be enclosed in []
+      host = '[' + host + ']';
+    }
+
+    return host;
+  }
+
+}

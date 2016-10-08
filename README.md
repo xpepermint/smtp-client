@@ -186,6 +186,14 @@ Note that all instance methods throw an error when something goes wrong or when 
 |--------|------|----------|---------|------------
 | timeout | Integer | No | 0 | A time in milliseconds after the operation automatically rejects (`0` disables the timeout).
 
+**SMTPClient.prototype.secure({timeout})**:Promise;
+
+> Sends the STARTTLS command to the server and upgrades the connection to TLS.
+
+| Option | Type | Required | Default | Description
+|--------|------|----------|---------|------------
+| timeout | Integer | No | 0 | A time in milliseconds after the operation automatically rejects (`0` disables the timeout).
+
 **SMTPClient.prototype.quit({timeout})**:Promise;
 
 > Sends the QUIT command to the server which closes the socket and disconnects from the server.

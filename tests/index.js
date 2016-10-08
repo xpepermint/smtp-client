@@ -1,17 +1,12 @@
 const test = require('ava');
 const net = require('net');
+const tls = require('tls');
 const stream = require('stream');
 const fs = require('fs');
 const {LineBuffer} = require('line-buffer');
 const {SMTPClient} = require('../src');
 
-let buffer = new LineBuffer();
-
-// let server = new MailDev({
-//   autoRelayRules: [{ "allow": "*" }]
-// });
-//
-
+const buffer = new LineBuffer();
 const PORT = 1025;
 
 function createSocketServer() {
@@ -568,4 +563,67 @@ test.serial('`data` throws an error if the source size exceeds the allowable lim
   catch(e) {
     t.is(e.message, 'Message size exceeds the allowable limit (10 bytes)');
   }
+});
+
+// test.serial('`secure` should upgrade the client to TLS', async (t) => {
+//   let s = createSocketServer();
+//   s.on('connection', (socket) => {
+//     socket.write('220 mx.test.com ESMTP\r\n');
+//     socket.on('data', (data) => {
+//       let line = buffer.feed(data)[0];
+//       if (!line) return;
+//
+//       if (line === 'STARTTLS') {
+//         socket.write(`220 foo\r\n`);
+//
+//         let starttls = require('starttls');
+//         starttls({
+//           socket,
+//           isServer: true,
+//           server: s,
+//           rejectUnauthorized: false
+//         });
+//       }
+//       else {
+//         socket.write(`250 foo\r\n`);
+//       }
+//     });
+//   });
+//   await s.start();
+//
+//   let c = new SMTPClient({port: PORT});
+//   c._extensions = ['STARTTLS'];
+//   await c.connect();
+//
+//   t.is(c.isSecure(), false);
+//   t.is(await c.secure(), '220');
+//   t.is(c.isSecure(), true);
+//
+//   await c.close();
+//   await s.stop();
+// });
+
+test.serial('`secure` throws an error if the response code is not 2xx', async (t) => {
+  let s = createSocketServer();
+  s.on('connection', (socket) => {
+    socket.write('220 mx.test.com ESMTP\r\n');
+    socket.on('data', (data) => {
+      socket.write(`500 foo\r\n`);
+    });
+  });
+  await s.start();
+
+  let c = new SMTPClient({port: PORT});
+  c._extensions = ['STARTTLS'];
+  await c.connect();
+
+  try {
+    await c.secure()
+  }
+  catch(e) {
+    t.is(e.message, 'foo');
+  }
+
+  await c.close();
+  await s.stop();
 });

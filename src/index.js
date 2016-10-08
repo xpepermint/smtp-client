@@ -268,6 +268,35 @@ exports.SMTPClient = class extends SMTPChannel {
   }
 
   /*
+  * Returns a Promise which sends the STARTTLS command to the server and
+  * upgrades the connection to TLS. We can abort the operating after a certain
+  * number of milliseconds by passing the optional `timeout` parameter.
+  */
+
+  secure({timeout=0}={}) {
+    let isPossible = this.hasExtension('STARTTLS');
+    if (!isPossible) {
+      throw new Error(`SMTP server does not support TLS`);
+    }
+
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`STARTTLS\r\n`, {timeout, handler})
+    .then((code) => {
+      if (code.charAt(0) !== '2') {
+        throw this._createSMTPResponseError(lines);
+      }
+      return this.negotiateTLS({timeout});
+    }).then(code => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      throw this._createSMTPResponseError(lines);
+    });
+  }
+
+  /*
   * Returns a new SMTPResponseError instance populated with information from the
   * provided reply lines.
   */

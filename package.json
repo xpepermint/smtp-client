@@ -1,0 +1,52 @@
+{
+  "name": "smtp-client",
+  "version": "0.1.0",
+  "description": "Low level SMTP communication layer.",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "ava"
+  },
+  "ava": {
+    "files": [
+      "./tests/*.js",
+      "./tests/**/*.js"
+    ],
+    "concurrency": 1,
+    "failFast": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xpepermint/smtp-client.git"
+  },
+  "keywords": [
+    "smtp",
+    "client",
+    "socket",
+    "channel",
+    "session",
+    "mail",
+    "email",
+    "client",
+    "communication",
+    "connection",
+    "send",
+    "deliver",
+    "delivery",
+    "raw",
+    "stream"
+  ],
+  "bugs": {
+    "url": "https://github.com/xpepermint/smtp-client/issues"
+  },
+  "homepage": "https://github.com/xpepermint/smtp-client#readme",
+  "author": "Kristijan Sedlak (Xpepermint)",
+  "license": "MIT",
+  "devDependencies": {
+    "ava": "0.16.x",
+    "maildev": "0.14.x"
+  },
+  "dependencies": {
+    "promised-timeout": "0.2.x",
+    "smtp-channel": "0.1.x"
+  }
+}

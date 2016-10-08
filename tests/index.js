@@ -2,8 +2,10 @@ const test = require('ava');
 const net = require('net');
 const stream = require('stream');
 const fs = require('fs');
-const MailDev = require('maildev');
+const {LineBuffer} = require('line-buffer');
 const {SMTPClient} = require('../src');
+
+let buffer = new LineBuffer();
 
 // let server = new MailDev({
 //   autoRelayRules: [{ "allow": "*" }]
@@ -67,7 +69,10 @@ test.serial('`helo` should send the HELO command', async (t) => {
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = 'HELO foo\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'HELO foo';
       let code = isValid ? '220' : '500';
       socket.write(`${code} foo\r\n`);
     });
@@ -112,7 +117,10 @@ test.serial('`ehlo` should send the EHLO command and retrieve supported extensio
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = data.toString() === 'EHLO foo\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'EHLO foo';
       if (isValid) {
         socket.write('250-foo\r\n');
         socket.write('250-8BITMIME\r\n');
@@ -167,7 +175,10 @@ test.serial('`greet` should send the EHLO command and retrieve supported extensi
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = data.toString() === 'EHLO foo\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'EHLO foo';
       if (isValid) {
         socket.write('250-foo\r\n');
         socket.write('250-8BITMIME\r\n');
@@ -198,7 +209,10 @@ test.serial('`greet` should fall back to HELO when EHLO is not supported', async
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = data.toString() === 'HELO foo\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'HELO foo';
       let code = isValid ? '500' : '220';
       socket.write(`${code} foo\r\n`);
     });
@@ -247,11 +261,14 @@ test.serial('`mail` should send the MAIL command', async (t) => {
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let parts = data.toString().split(/:<|>/);
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let parts = line.split(/:<|>/);
       let isValid = (
         parts[0] === 'MAIL FROM'
-        && parts[1] === 'foo@bar.com'
-        && parts[2] === '\r\n'
+        && parts[1] === 'foo'
+        && parts[2] === ''
       );
       let code = isValid ? '250' : '500';
       socket.write(`${code} foo\r\n`);
@@ -262,7 +279,7 @@ test.serial('`mail` should send the MAIL command', async (t) => {
   let c = new SMTPClient({port: PORT});
   await c.connect();
 
-  t.is(await c.mail({from: 'foo@bar.com'}), '250');
+  t.is(await c.mail({from: 'foo'}), '250');
 
   await c.close();
   await s.stop();
@@ -297,11 +314,14 @@ test.serial('`rcpt` should send the RCPT command', async (t) => {
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let parts = data.toString().split(/:<|>/);
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let parts = line.split(/:<|>/);
       let isValid = (
         parts[0] === 'RCPT TO'
-        && parts[1] === 'foo@bar.com'
-        && parts[2] === '\r\n'
+        && parts[1] === 'foo'
+        && parts[2] === ''
       );
       let code = isValid ? '250' : '500';
       socket.write(`${code} foo\r\n`);
@@ -312,7 +332,7 @@ test.serial('`rcpt` should send the RCPT command', async (t) => {
   let c = new SMTPClient({port: PORT});
   await c.connect();
 
-  t.is(await c.rcpt({to: 'foo@bar.com'}), '250');
+  t.is(await c.rcpt({to: 'foo'}), '250');
 
   await c.close();
   await s.stop();
@@ -347,7 +367,10 @@ test.serial('`noop` should send the NOOP command (ping)', async (t) => {
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = data.toString() === 'NOOP\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'NOOP';
       let code = isValid ? '250' : '500';
       socket.write(`${code} foo\r\n`);
     });
@@ -392,7 +415,10 @@ test.serial('`rset` should send the RSET command (reset/flush)', async (t) => {
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = data.toString() === 'RSET\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'RSET';
       let code = isValid ? '250' : '500';
       socket.write(`${code} foo\r\n`);
     });
@@ -437,7 +463,10 @@ test.serial('`quit` should send the QUIT command', async (t) => {
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let isValid = data.toString() === 'QUIT\r\n';
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      let isValid = line === 'QUIT';
       let code = isValid ? '221' : '500';
       socket.write(`${code} foo\r\n`);
     });
@@ -483,18 +512,14 @@ test.serial('`data` should send the DATA command with the appended "." at the en
   s.on('connection', (socket) => {
     socket.write('220 mx.test.com ESMTP\r\n');
     socket.on('data', (data) => {
-      let str = data.toString();
-      if (str === 'DATA\r\n') {
+      let lines = buffer.feed(data);
+      if (lines === 0) return;
+
+      if (lines[0] === 'DATA') {
         socket.write(`354 foo\r\n`);
       }
-      else {
-        let [line, dot] = str.split('\r\n');
-        let isValid = (
-          line === 'bar'
-          && dot === '.'
-        );
-        let code = isValid ? '250' : '500';
-        socket.write(`${code} foo\r\n`);
+      else if (lines.indexOf('.') !== -1){
+        socket.write(`250 foo\r\n`);
       }
     });
   });

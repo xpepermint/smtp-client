@@ -25,15 +25,14 @@ exports.SMTPClient = class extends SMTPChannel {
     let lines = [];
     let handler = (line) => lines.push(line)
 
-    return super.connect({timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    return super.connect({timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -43,20 +42,20 @@ exports.SMTPClient = class extends SMTPChannel {
   */
 
   helo({hostname=null, timeout=0}={}) {
-    let lines = [];
-    let handler = (line) => lines.push(line);
-
     if (!hostname) hostname = this._getHostname();
 
-    return this.write(`HELO ${hostname}\r\n`, {timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    let lines = [];
+    let handler = (line) => lines.push(line);
+    let command = `HELO ${hostname}\r\n`;
+
+    return this.write(command, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -67,22 +66,21 @@ exports.SMTPClient = class extends SMTPChannel {
   */
 
   ehlo({hostname=null, timeout=0}={}) {
-    let lines = [];
-    let handler = (line) => lines.push(line);
-
     if (!hostname) hostname = this._getHostname();
 
-    return this.write(`EHLO ${hostname}\r\n`, {timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          lines.shift(); // first line is a description
-          this._extensions = lines.map(l => this.parseReplyText(l));
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    let lines = [];
+    let handler = (line) => lines.push(line);
+    let command = `EHLO ${hostname}\r\n`;
+
+    return this.write(command, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        this._extensions = lines.slice(1).map(l => this.parseReplyText(l));
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -92,8 +90,7 @@ exports.SMTPClient = class extends SMTPChannel {
   */
 
   greet({hostname=null, timeout=0}={}) {
-    return this.ehlo({hostname})
-      .catch((e) => this.helo({hostname}));
+    return this.ehlo({hostname}).catch((e) => this.helo({hostname}));
   }
 
   /*
@@ -170,16 +167,16 @@ exports.SMTPClient = class extends SMTPChannel {
   mail({from=null, timeout=0}={}) {
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `MAIL FROM:<${from}>\r\n`;
 
-    return this.write(`MAIL FROM:<${from}>\r\n`, {timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    return this.write(command, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -191,16 +188,16 @@ exports.SMTPClient = class extends SMTPChannel {
   rcpt({to=null, timeout=0}={}) {
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `RCPT TO:<${to}>\r\n`;
 
-    return this.write(`RCPT TO:<${to}>\r\n`, {timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    return this.write(command, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -212,16 +209,16 @@ exports.SMTPClient = class extends SMTPChannel {
   noop({timeout=0}={}) {
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `NOOP\r\n`;
 
-    return this.write(`NOOP\r\n`, {timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    return this.write(command, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -233,16 +230,16 @@ exports.SMTPClient = class extends SMTPChannel {
   rset({timeout=0}={}) {
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `RSET\r\n`;
 
-    return this.write(`RSET\r\n`, {timeout, handler})
-      .then((code) => {
-        if (code.charAt(0) === '2') {
-          return code;
-        }
-        else {
-          throw this._createSMTPResponseError(lines);
-        }
-      });
+    return this.write(command, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
   }
 
   /*
@@ -254,9 +251,9 @@ exports.SMTPClient = class extends SMTPChannel {
   quit({timeout=0}={}) {
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `QUIT\r\n`;
 
-    return this.write(`QUIT\r\n`, {timeout, handler})
-    .then((code) => {
+    return this.write(command, {timeout, handler}).then((code) => {
       if (code.charAt(0) === '2') {
         return code;
       }
@@ -281,9 +278,9 @@ exports.SMTPClient = class extends SMTPChannel {
 
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `DATA\r\n`;
 
-    return this.write(`DATA\r\n`, {timeout, handler})
-    .then((code) => {
+    return this.write(command, {timeout, handler}).then((code) => {
       if (code.charAt(0) !== '3') {
         throw this._createSMTPResponseError(lines);
       }
@@ -291,7 +288,7 @@ exports.SMTPClient = class extends SMTPChannel {
         lines = [];
         return this.write(`${source}\r\n.\r\n`, {timeout, handler});
       }
-    }).then(code => {
+    }).then((code) => {
       if (code.charAt(0) === '2') {
         return code;
       }
@@ -315,15 +312,16 @@ exports.SMTPClient = class extends SMTPChannel {
 
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `STARTTLS\r\n`;
 
-    return this.write(`STARTTLS\r\n`, {timeout, handler}).then((code) => {
+    return this.write(command, {timeout, handler}).then((code) => {
       if (code.charAt(0) !== '2') {
         throw this._createSMTPResponseError(lines);
       }
       else {
         return this.negotiateTLS({timeout});
       }
-    }).then(code => {
+    }).then((code) => {
       if (code.charAt(0) === '2') {
         return code;
       }
@@ -350,8 +348,9 @@ exports.SMTPClient = class extends SMTPChannel {
     let lines = [];
     let handler = (line) => lines.push(line);
     let token = new Buffer(`\u0000${username}\u0000${password}`, 'utf-8').toString('base64');
+    let command = `AUTH PLAIN ${token}\r\n`;
 
-    return this.write(`AUTH PLAIN ${token}\r\n`, {timeout, handler}).then((code) => {
+    return this.write(command, {timeout, handler}).then((code) => {
       if (code.charAt(0) === '2') {
         return code;
       }
@@ -377,8 +376,9 @@ exports.SMTPClient = class extends SMTPChannel {
 
     let lines = [];
     let handler = (line) => lines.push(line);
+    let command = `AUTH LOGIN\r\n`;
 
-    return this.write(`AUTH LOGIN\r\n`, {timeout, handler}).then((code) => {
+    return this.write(command, {timeout, handler}).then((code) => {
       if (lines[0] !== '334 VXNlcm5hbWU6') {
         throw this._createSMTPResponseError(lines);
       }
@@ -436,7 +436,7 @@ exports.SMTPClient = class extends SMTPChannel {
       host = '[127.0.0.1]';
     }
     else if (host.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) { // IP mut be enclosed in []
-      host = '[' + host + ']';
+      host = `[${host}]`;
     }
 
     return host;

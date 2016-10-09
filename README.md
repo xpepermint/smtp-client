@@ -22,7 +22,7 @@ $ npm install --save smtp-client
 ```js
 import {SMTPClient} from 'smtp-client';
 
-let smtp = new SMTPClient({
+let s = new SMTPClient({
   host: 'mx.domain.com',
   port: 25
 });

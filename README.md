@@ -234,23 +234,21 @@ Note that all instance methods throw an error when something goes wrong or when 
 | handler | Function,Promise | No | - | A method for handling SMTP server replies.
 | timeout | Integer | No | 0 | A time in milliseconds after the operation automatically rejects (`0` disables the timeout).
 
-### Events
-
 **Event: close**: () => {}
 
 > Emitted once the socket is fully closed.
 
-**Event: connect**: () => {}
+**Event: command**: (line) => {}
 
-> Emitted when a socket connection is successfully established.
-
-**Event: data**: (data) => {}
-
-> Emitted when data is received.
+> Emitted when a line of data is sent to the SMTP server.
 
 | Argument | Type | Description
 |----------|------|------------
-| data | Buffer,String | Received data string.
+| line | String | Client command string.
+
+**Event: connect**: () => {}
+
+> Emitted when a socket connection is successfully established.
 
 **Event: end**: () => {}
 
@@ -264,15 +262,29 @@ Note that all instance methods throw an error when something goes wrong or when 
 |----------|------|------------
 | error | Error | Error object.
 
-**Event: reply**: (line, {code, isLast}) => {}
+**Event: receive**: (chunk) => {}
+
+> Emitted when a chunk of data is received from the SMTP server.
+
+| Argument | Type | Description
+|----------|------|------------
+| chunk | Buffer,String | A chunk of data.
+
+**Event: reply**: (line) => {}
 
 > Emitted when a new reply from the server is received.
 
 | Argument | Type | Description
 |----------|------|------------
 | line | String | SMTP server reply string.
-| code | String | SMTP server reply code.
-| isLast | Boolean | Is `true` when the `line` represents the last reply from the SMTP server.
+
+**Event: send**: (chunk) => {}
+
+> Emitted when a chunk of data is sent to the SMTP server.
+
+| Argument | Type | Description
+|----------|------|------------
+| chunk | Buffer,String | A chunk of data.
 
 **Event: timeout**: () => {}
 

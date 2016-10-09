@@ -1,6 +1,6 @@
 {
   "name": "smtp-client",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Low level SMTP communication layer.",
   "main": "./src/index.js",
   "scripts": {
@@ -47,6 +47,6 @@
   },
   "dependencies": {
     "promised-timeout": "0.2.x",
-    "smtp-channel": "0.1.8"
+    "smtp-channel": "0.2.1"
   }
 }

@@ -31,6 +31,20 @@ test.serial('`parseReplyText` should parse SMTP and ESMTP reply message', async 
   t.is(c.parseReplyText('555 5.5.5 Error'), 'Error');
 });
 
+test.serial('`getDataSizeLimit` should return email size limit', async (t) => {
+  let c = new SMTPClient();
+  c._extensions = ['SIZE 100'];
+
+  t.is(c.getDataSizeLimit(), 100);
+});
+
+test.serial('`getAuthMechanisms` should return a list of available authentication mechanisms', async (t) => {
+  let c = new SMTPClient();
+  c._extensions = ['AUTH login PLAIN'];
+
+  t.deepEqual(c.getAuthMechanisms(), ['LOGIN', 'PLAIN']);
+});
+
 test.serial('`connect` should connect to the SMTP server', async (t) => {
   let s = createSocketServer();
   s.on('connection', (socket) => {
@@ -563,6 +577,118 @@ test.serial('`data` throws an error if the source size exceeds the allowable lim
   catch(e) {
     t.is(e.message, 'Message size exceeds the allowable limit (10 bytes)');
   }
+});
+
+test.serial('`authPlain` should send the AUTH PLAIN command', async (t) => {
+  let s = createSocketServer();
+  s.on('connection', (socket) => {
+    socket.write('220 mx.test.com ESMTP\r\n');
+    socket.on('data', (data) => {
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      if (line === 'AUTH PLAIN AGZvbwBiYXI=') {
+        socket.write(`235 Accepted\r\n`);
+      }
+      else {
+        socket.write(`500 Error\r\n`);
+      }
+    });
+  });
+  await s.start();
+
+  let c = new SMTPClient({port: PORT});
+  c._extensions = ['AUTH PLAIN'];
+  await c.connect();
+
+  t.is(await c.authPlain({username: 'foo', password: 'bar'}), '235');
+
+  await c.close();
+  await s.stop();
+});
+
+test.serial('`authPlain` throws an error if the response code is not 2xx', async (t) => {
+  let s = createSocketServer();
+  s.on('connection', (socket) => {
+    socket.write('220 mx.test.com ESMTP\r\n');
+    socket.on('data', (data) => {
+      socket.write(`500 foo    bar\r\n`);
+    });
+  });
+  await s.start();
+
+  let c = new SMTPClient({port: PORT});
+  c._extensions = ['AUTH PLAIN'];
+  await c.connect();
+
+  try {
+    await c.authPlain();
+  }
+  catch(e) {
+    t.is(e.message, 'foo bar');
+  }
+
+  await c.close();
+  await s.stop();
+});
+
+test.serial('`authLogin` should send the AUTH LOGIN command', async (t) => {
+  let s = createSocketServer();
+  s.on('connection', (socket) => {
+    socket.write('220 mx.test.com ESMTP\r\n');
+    socket.on('data', (data) => {
+      let line = buffer.feed(data)[0];
+      if (!line) return;
+
+      if (line === 'AUTH LOGIN') {
+        socket.write(`334 VXNlcm5hbWU6\r\n`);
+      }
+      else if (line === 'Zm9v') {
+        socket.write(`334 UGFzc3dvcmQ6\r\n`);
+      }
+      else if (line === 'YmFy') {
+        socket.write(`235 Accepted\r\n`);
+      }
+      else {
+        socket.write(`500 Error\r\n`);
+      }
+    });
+  });
+  await s.start();
+
+  let c = new SMTPClient({port: PORT});
+  c._extensions = ['AUTH LOGIN'];
+  await c.connect();
+
+  t.is(await c.authLogin({username: 'foo', password: 'bar'}), '235');
+
+  await c.close();
+  await s.stop();
+});
+
+test.serial('`authLogin` throws an error if the response code is not 2xx', async (t) => {
+  let s = createSocketServer();
+  s.on('connection', (socket) => {
+    socket.write('220 mx.test.com ESMTP\r\n');
+    socket.on('data', (data) => {
+      socket.write(`500 foo    bar\r\n`);
+    });
+  });
+  await s.start();
+
+  let c = new SMTPClient({port: PORT});
+  c._extensions = ['AUTH LOGIN'];
+  await c.connect();
+
+  try {
+    await c.authLogin();
+  }
+  catch(e) {
+    t.is(e.message, 'foo bar');
+  }
+
+  await c.close();
+  await s.stop();
 });
 
 // test.serial('`secure` should upgrade the client to TLS', async (t) => {

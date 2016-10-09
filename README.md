@@ -30,7 +30,7 @@ let smtp = new SMTPClient({
 (async function() {
   await s.connect();
   await s.greet({hostname: 'mx.domain.com'}); // runs EHLO command or HELO as a fallback
-  await s.auth({method: 'plane', username: 'john', password: 'secret'}); // authenticates a user
+  await s.authPlain({username: 'john', password: 'secret'}); // authenticates a user
   await s.mail({from: 'from@sender.com'}); // runs MAIL FROM command
   await s.rcpt({to: 'to@recipient.com'}); // runs RCPT TO command (run this multiple times to add more recii)
   await s.data('mail source'); // runs DATA command and streams email source
@@ -50,6 +50,24 @@ let smtp = new SMTPClient({
 | timeout | Integer | No | 0 | A time in milliseconds after the client automatically disconnects (`0` disables the timeout).
 
 Note that all instance methods throw an error when something goes wrong or when a remote SMTP server does not reply with a success code.
+
+**SMTPClient.prototype.authLogin({username, password})**:Promise;
+
+> Sends AUTH LOGIN command to the server and authenticates.
+
+| Option | Type | Required | Default | Description
+|--------|------|----------|---------|------------
+| username | String | No | - | Authentication username.
+| password | String | No | - | Authentication password.
+
+**SMTPClient.prototype.authPlain({username, password})**:Promise;
+
+> Sends AUTH PLAIN command to the server and authenticates.
+
+| Option | Type | Required | Default | Description
+|--------|------|----------|---------|------------
+| username | String | No | - | Authentication username.
+| password | String | No | - | Authentication password.
 
 **SMTPClient.prototype.close({timeout})**:Promise;
 
@@ -86,9 +104,13 @@ Note that all instance methods throw an error when something goes wrong or when 
 | hostname | String | No | machine's hostname | Sender's FQDN.
 | timeout | Integer | No | 0 | A time in milliseconds after the operation automatically rejects (`0` disables the timeout).
 
+**SMTPClient.prototype.getAuthMechanisms()**:Array;
+
+> Returns a list of supported authentication mechanisms. The value is retrieved from the SMTP server extensions when the `ehlo` command is executed.
+
 **SMTPClient.prototype.getDataSizeLimit()**:Integer;
 
-> Returns the email size limit in bytes. The value is retrieved from the SMTP server extensions when the `ehlo` command is executed.
+> Returns email size limit in bytes. The value is retrieved from the SMTP server extensions when the `ehlo` command is executed.
 
 **SMTPClient.prototype.greet({hostname, timeout})**:Promise;
 

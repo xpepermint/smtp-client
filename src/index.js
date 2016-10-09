@@ -30,7 +30,9 @@ exports.SMTPClient = class extends SMTPChannel {
         if (code.charAt(0) === '2') {
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -51,7 +53,9 @@ exports.SMTPClient = class extends SMTPChannel {
         if (code.charAt(0) === '2') {
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -75,7 +79,9 @@ exports.SMTPClient = class extends SMTPChannel {
           this._extensions = lines.map(l => this.parseReplyText(l));
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -100,16 +106,30 @@ exports.SMTPClient = class extends SMTPChannel {
   }
 
   /*
-  * Returns the email size limit in bytes.
+  * Returns an email size limit in bytes.
   */
 
   getDataSizeLimit() {
-    let extension = this._extensions.find(e => e.split(' ')[0] === 'SIZE');
+    let extension = this._extensions.find((e) => e.split(' ')[0] === 'SIZE');
     if (extension) {
       return parseInt(extension.split(' ')[1]);
     }
     else {
       return 0;
+    }
+  }
+
+  /*
+  * Returns a list of supported authentication mechanisms.
+  */
+
+  getAuthMechanisms() {
+    let extension = this._extensions.find((e) => e.split(' ')[0] === 'AUTH');
+    if (extension) {
+      return extension.split(' ').filter((e) => !!e).map((e) => e.trim().toUpperCase()).slice(1);
+    }
+    else {
+      return [];
     }
   }
 
@@ -156,7 +176,9 @@ exports.SMTPClient = class extends SMTPChannel {
         if (code.charAt(0) === '2') {
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -175,7 +197,9 @@ exports.SMTPClient = class extends SMTPChannel {
         if (code.charAt(0) === '2') {
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -194,7 +218,9 @@ exports.SMTPClient = class extends SMTPChannel {
         if (code.charAt(0) === '2') {
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -213,7 +239,9 @@ exports.SMTPClient = class extends SMTPChannel {
         if (code.charAt(0) === '2') {
           return code;
         }
-        throw this._createSMTPResponseError(lines);
+        else {
+          throw this._createSMTPResponseError(lines);
+        }
       });
   }
 
@@ -232,7 +260,9 @@ exports.SMTPClient = class extends SMTPChannel {
       if (code.charAt(0) === '2') {
         return code;
       }
-      throw this._createSMTPResponseError(lines);
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
     });
   }
 
@@ -257,13 +287,17 @@ exports.SMTPClient = class extends SMTPChannel {
       if (code.charAt(0) !== '3') {
         throw this._createSMTPResponseError(lines);
       }
-      lines = [];
-      return this.write(`${source}\r\n.\r\n`, {timeout, handler});
+      else {
+        lines = [];
+        return this.write(`${source}\r\n.\r\n`, {timeout, handler});
+      }
     }).then(code => {
       if (code.charAt(0) === '2') {
         return code;
       }
-      throw this._createSMTPResponseError(lines);
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
     });
   }
 
@@ -282,17 +316,93 @@ exports.SMTPClient = class extends SMTPChannel {
     let lines = [];
     let handler = (line) => lines.push(line);
 
-    return this.write(`STARTTLS\r\n`, {timeout, handler})
-    .then((code) => {
+    return this.write(`STARTTLS\r\n`, {timeout, handler}).then((code) => {
       if (code.charAt(0) !== '2') {
         throw this._createSMTPResponseError(lines);
       }
-      return this.negotiateTLS({timeout});
+      else {
+        return this.negotiateTLS({timeout});
+      }
     }).then(code => {
       if (code.charAt(0) === '2') {
         return code;
       }
-      throw this._createSMTPResponseError(lines);
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
+  }
+
+  /*
+  * Returns a Promise which sends the AUTH PLAIN commands to the server. We can
+  * abort the operating after a certain number of milliseconds by passing the
+  * optional `timeout` parameter.
+  *
+  * NOTES: The PLAIN authentication mechanism is explaind in rfc4954 and rfc4616.
+  */
+
+  authPlain({username=null, password=null, timeout=0}={}) {
+    let mechanisms = this.getAuthMechanisms();
+    if (mechanisms.indexOf('PLAIN') === -1) {
+      throw new Error(`SMTP server does not support the PLAIN authentication mechanism`);
+    }
+
+    let lines = [];
+    let handler = (line) => lines.push(line);
+    let token = new Buffer(`\u0000${username}\u0000${password}`, 'utf-8').toString('base64');
+
+    return this.write(`AUTH PLAIN ${token}\r\n`, {timeout, handler}).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
+    });
+  }
+
+  /*
+  * Returns a Promise which sends the AUTH LOGIN commands to the server. We can
+  * abort the operating after a certain number of milliseconds by passing the
+  * optional `timeout` parameter.
+  *
+  * NOTES: The LOGIN authentication mechanism is not covered by rfc documents.
+  */
+
+  authLogin({username=null, password=null, timeout=0}={}) {
+    let mechanisms = this.getAuthMechanisms();
+    if (mechanisms.indexOf('LOGIN') === -1) {
+      throw new Error(`SMTP server does not support the LOGIN authentication mechanism`);
+    }
+
+    let lines = [];
+    let handler = (line) => lines.push(line);
+
+    return this.write(`AUTH LOGIN\r\n`, {timeout, handler}).then((code) => {
+      if (lines[0] !== '334 VXNlcm5hbWU6') {
+        throw this._createSMTPResponseError(lines);
+      }
+      else {
+        lines = [];
+        let token = new Buffer(username, 'utf-8').toString('base64');
+        return this.write(`${token}\r\n`, {timeout, handler})
+      }
+    }).then((code) => {
+      if (lines[0] !== '334 UGFzc3dvcmQ6') {
+        throw this._createSMTPResponseError(lines);
+      }
+      else {
+        lines = [];
+        let token = new Buffer(password, 'utf-8').toString('base64');
+        return this.write(`${token}\r\n`, {timeout, handler})
+      }
+    }).then((code) => {
+      if (code.charAt(0) === '2') {
+        return code;
+      }
+      else {
+        throw this._createSMTPResponseError(lines);
+      }
     });
   }
 

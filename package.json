@@ -47,6 +47,6 @@
   },
   "dependencies": {
     "promised-timeout": "0.2.x",
-    "smtp-channel": "0.2.2"
+    "smtp-channel": "0.2.3"
   }
 }

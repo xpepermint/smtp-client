@@ -42,11 +42,11 @@
   "author": "Kristijan Sedlak (Xpepermint)",
   "license": "MIT",
   "devDependencies": {
-    "ava": "0.16.x",
+    "ava": "3.11.x",
     "line-buffer": "0.1.x"
   },
   "dependencies": {
-    "promised-timeout": "0.2.x",
+    "promised-timeout": "0.5.x",
     "smtp-channel": "0.2.3"
   }
 }

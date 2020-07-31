@@ -321,13 +321,8 @@ exports.SMTPClient = class extends SMTPChannel {
       else {
         return this.negotiateTLS({timeout});
       }
-    }).then((code) => {
-      if (code.charAt(0) === '2') {
-        return code;
-      }
-      else {
-        throw this._createSMTPResponseError(lines);
-      }
+    }).then(() => {
+      this._extensions = [];
     });
   }
 

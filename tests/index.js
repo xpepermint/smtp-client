@@ -68,7 +68,7 @@ test.serial('`connect` throws an error if the response code is not 2xx', async (
 
   let c = new SMTPClient({port: PORT});
 
-  t.throws(c.connect());
+  t.throws(c.connect);
 
   await s.stop();
 });

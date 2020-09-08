@@ -90,7 +90,7 @@ exports.SMTPClient = class extends SMTPChannel {
   */
 
   greet({hostname=null, timeout=0}={}) {
-    return this.ehlo({hostname}).catch((e) => this.helo({hostname}));
+    return this.ehlo({hostname, timeout}).catch((e) => this.helo({hostname, timeout}));
   }
 
   /*

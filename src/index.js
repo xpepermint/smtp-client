@@ -164,10 +164,16 @@ exports.SMTPClient = class extends SMTPChannel {
   * `timeout` parameter.
   */
 
-  mail({from=null, timeout=0}={}) {
+  mail({from=null, timeout=0, utf8=false}={}) {
     let lines = [];
     let handler = (line) => lines.push(line);
     let command = `MAIL FROM:<${from}>\r\n`;
+    if(utf8){
+      if(!this.hasExtension("SMTPUTF8")){
+        throw new Error("Server does not support UTF8 mailboxes");
+      }
+      command = `MAIL FROM:<${from}> SMTPUTF8\r\n`;
+    }
 
     return this.write(command, {timeout, handler}).then((code) => {
       if (code.charAt(0) === '2') {

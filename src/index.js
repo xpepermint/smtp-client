@@ -292,7 +292,7 @@ exports.SMTPClient = class extends SMTPChannel {
       }
       else {
         lines = [];
-        return this.write(`${source}\r\n.\r\n`, {timeout, handler});
+        return this.write(`${source.replace(/^\./m,'..')}\r\n.\r\n`, {timeout, handler});
       }
     }).then((code) => {
       if (code.charAt(0) === '2') {

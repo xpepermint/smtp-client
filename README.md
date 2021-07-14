@@ -60,15 +60,6 @@ Note that all instance methods throw an error when something goes wrong or when 
 | username | String | No | - | Authentication username.
 | password | String | No | - | Authentication password.
 
-**SMTPClient.prototype.authPlain({username, password})**:Promise;
-
-> Sends AUTH PLAIN command to the server and authenticates.
-
-| Option | Type | Required | Default | Description
-|--------|------|----------|---------|------------
-| username | String | No | - | Authentication username.
-| password | String | No | - | Authentication password.
-
 **SMTPClient.prototype.close({timeout})**:Promise;
 
 > Destroys the client and ensures that no more I/O activity happens on this socket. When possible, use the `quit` method instead.

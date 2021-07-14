@@ -2,9 +2,9 @@
 
 # smtp-client
 
-> Simple, promisified, protocol-based SMTP client for Node.js.
+> Simple promised, protocol-based SMTP client for Node.js.
 
-This is an open source [npm](http://npmjs.com) package from [Node.js](http://nodejs.org). The source code is available on [GitHub](https://github.com/xpepermint/smtp-client) where you can also find our [issue tracker](https://github.com/xpepermint/smtp-client/issues).
+This is an open-source [npm](http://npmjs.com) package from [Node.js](http://nodejs.org). The source code is available on [GitHub](https://github.com/xpepermint/smtp-client) where you can also find our [issue tracker](https://github.com/xpepermint/smtp-client/issues).
 
 ## Related Projects
 
@@ -70,7 +70,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.connect({timeout})**:Promise;
 
-> Connects to the SMTP server and starts socket I/O activity.
+> Connects to the SMTP server and starts to socket I/O activity.
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
@@ -78,7 +78,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.data(source, {sourceSize, timeout})**:Promise;
 
-> Sends the DATA command to the server which uploads the `source` of an email and finalize the process with the `.` (automatically appended to the source).
+> Sends the DATA command to the server which uploads the `source` of an email and finalizes the process with the `.` (automatically appended to the source).
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
@@ -160,7 +160,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.parseEnhancedReplyCode(line)**:String;
 
-> A helper method which parses and returns the enhanced reply code from the provided SMTP server reply.
+> A helper method that parses and returns the enhanced reply code from the provided SMTP server reply.
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
@@ -168,7 +168,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.parseReplyCode(line)**:String;
 
-> A helper method which parses and returns the reply code from the provided SMTP server reply.
+> A helper method that parses and returns the reply code from the provided SMTP server reply.
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
@@ -176,7 +176,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 **SMTPClient.prototype.parseReplyText(line)**:String;
 
-> A helper method which parses and returns the message part of the provided SMTP server reply.
+> A helper method that parses and returns the message part of the provided SMTP server reply.
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
@@ -221,8 +221,8 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 | Option | Type | Required | Default | Description
 |--------|------|----------|---------|------------
-| data | String,Stream,Buffer | Yes | - | Data to be sent to the SMTP server. Make sure that you apply to the SMTP rules and complete lines with `\r\n`. When sending email data stream, make sure you include the `.` as the last line.
-| handler | Function,Promise | No | - | A method for handling SMTP server replies.
+| data | String, Stream, Buffer | Yes | - | Data to be sent to the SMTP server. Make sure that you apply to the SMTP rules and complete lines with `\r\n`. When sending email data stream, make sure you include the `.` as the last line.
+| handler | Function, Promise | No | - | A method for handling SMTP server replies.
 | timeout | Integer | No | 0 | A time in milliseconds after the operation automatically rejects (`0` disables the timeout).
 
 **Event: close**: () => {}
@@ -259,7 +259,7 @@ Note that all instance methods throw an error when something goes wrong or when 
 
 | Argument | Type | Description
 |----------|------|------------
-| chunk | Buffer,String | A chunk of data.
+| chunk | Buffer, String | A chunk of data.
 
 **Event: reply**: (line) => {}
 

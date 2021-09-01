@@ -33,7 +33,7 @@ let s = new SMTPClient({
   await s.authPlain({username: 'john', password: 'secret'}); // authenticates a user
   await s.mail({from: 'from@sender.com'}); // runs MAIL FROM command
   await s.rcpt({to: 'to@recipient.com'}); // runs RCPT TO command (run this multiple times to add more recii)
-  await s.data('mail source'); // runs DATA command and streams email source
+  await s.data('mail source'); // runs DATA command and streams email source (e.x. smtpClient.data(`Subject: title\r\nbody`))
   await s.quit(); // runs QUIT command
 })().catch(console.error);
 ```

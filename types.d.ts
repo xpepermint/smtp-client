@@ -18,7 +18,7 @@ export class SMTPClient {
   greet(options?: GreetOptions): Promise<void>
   helo(options?: HeloOptions): Promise<void>
   ehlo(options?: EhloOptions): Promise<void>
-  hasExtension(extensions: string[]): boolean
+  hasExtension(extensions: string): boolean
   getDataSizeLimit(): number
   getAuthMechanisms(): string[]
   parseEnhancedReplyCode(line: string): string | null

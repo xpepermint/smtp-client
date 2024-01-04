@@ -89,9 +89,14 @@ exports.SMTPClient = class extends SMTPChannel {
   * number of milliseconds by passing the optional `timeout` parameter.
   */
 
-  greet({hostname=null, timeout=0}={}) {
-    return this.ehlo({hostname, timeout}).catch((e) => this.helo({hostname, timeout}));
+  greet({hostname = null, timeout = 0} = {}) {
+    return this.ehlo({hostname, timeout}).catch((ehloError) =>
+      this.helo({hostname, timeout}).catch((heloError) =>
+          Promise.reject(heloError)
+      )
+    );
   }
+
 
   /*
   * Returns `true` if the provided extension name is supporter by the remote
